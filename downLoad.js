@@ -7,8 +7,7 @@ var bou = [113.1436, 24.2914, 118.2858, 29.9727]; //下载范围
 
 var Minlevel = 1; //最小层级
 var Maxlevel = 1; //最大层级
-// var token = 'ab571050eed8de63381bc9616643472a'; //6000000
-var token = 'f732c4a58212facb875f52833bb7cc37'; //3000
+var token = 'f732c4a58212facb875f52833bb7cc37'; // 一天3000次
 var zpath = './text'; // 瓦片目录
 var speed = 100; //并发数
 var mapstyle = 'vec_w'; //地图类型(img_w:影像底图 cia_w:影像标注 vec_w:街道底图 cva_w街道标注,备注，自己再api找相对于的)
