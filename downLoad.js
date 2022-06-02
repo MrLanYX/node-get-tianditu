@@ -2,15 +2,14 @@
 var axios = require('axios')
 var Bagpipe = require('bagpipe')
 var fs = require("fs");
-var request = require("request");
 var bou = [113.1436, 24.2914, 118.2858, 29.9727]; //下载范围
 
 var Minlevel = 1; //最小层级
-var Maxlevel = 1; //最大层级
+var Maxlevel = 15; //最大层级
 var token = 'f732c4a58212facb875f52833bb7cc37'; // 一天3000次
 var zpath = './text'; // 瓦片目录
 var speed = 100; //并发数
-var mapstyle = 'vec_w'; //地图类型(img_w:影像底图 cia_w:影像标注 vec_w:街道底图 cva_w街道标注,备注，自己再api找相对于的)
+var mapstyles = ['vec_w', 'cva_w']; //地图类型(img_w:影像底图 cia_w:影像标注 vec_w:街道底图 cva_w街道标注,备注，自己再api找相对于的)
 
 var all = [];
 var user_agent_list_2 = [
@@ -74,22 +73,28 @@ function createDir() {
     fs.access(zpath, fs.constants.F_OK, err => {
         // 创建tiles文件夹
         if (err) fs.mkdir(zpath, err => {})
-        for (let z = 0; z <= all.length - 1; z++) {
-            fs.access(`${zpath}/${all[z].t}`, fs.constants.F_OK, err => {
-                // 创建tiles/Z文件夹 ,Z是层级
-                if (err) fs.mkdir(`${zpath}/${all[z].t}`, err => {})
-                for (let x = all[z].x[0]; x <= all[z].x[1]; x++) {
-                    fs.access(`${zpath}/${all[z].t}/${x}`, fs.constants.F_OK, err => {
-                        // 创建tiles/Z/X文件夹 ,X是瓦片横坐标
-                        if (err) fs.mkdir(`${zpath}/${all[z].t}/${x}`, err => {})
+        for (const mapstyle of mapstyles) {
+            fs.access(`${zpath}/${mapstyle}`, fs.constants.F_OK, err => {
+                // 创建 tiles/mapstyle瓦片类型文件夹
+                if (err) fs.mkdir(`${zpath}/${mapstyle}`, err => {})
+                for (let z = 0; z <= all.length - 1; z++) {
+                    fs.access(`${zpath}/${mapstyle}/${all[z].t}`, fs.constants.F_OK, err => {
+                        // 创建 tiles/mapstyle/Z 文件夹 ,Z是层级
+                        if (err) fs.mkdir(`${zpath}/${mapstyle}/${all[z].t}`, err => {})
+                        for (let x = all[z].x[0]; x <= all[z].x[1]; x++) {
+                            fs.access(`${zpath}/${mapstyle}/${all[z].t}/${x}`, fs.constants.F_OK, err => {
+                                // 创建 tiles/mapstyle/Z/X 文件夹 ,X是瓦片横坐标
+                                if (err) fs.mkdir(`${zpath}/${mapstyle}/${all[z].t}/${x}`, err => {})
+                            })
+                        }
                     })
                 }
             })
         }
-        // 文件夹可能较多，等待2s开始下载
+        // 文件夹可能较多，等待5s开始下载
         setTimeout(() => {
             task()
-        }, 2000)
+        }, 5000)
     })
 }
 
@@ -101,12 +106,14 @@ var sum = 0;
 var bag = new Bagpipe(speed, { timeout: 1000 })
 
 function task() {
-    for (let z = 0; z <= all.length - 1; z++) {
-        for (let x = all[z].x[0]; x <= all[z].x[1]; x++) {
-            for (let y = all[z].y[0]; y <= all[z].y[1]; y++) {
-                // 将下载任务推入队列
-                ++sum
-                bag.push(download, x, y, all[z].t)
+    for (const mapstyle of mapstyles) {
+        for (let z = 0; z <= all.length - 1; z++) {
+            for (let x = all[z].x[0]; x <= all[z].x[1]; x++) {
+                for (let y = all[z].y[0]; y <= all[z].y[1]; y++) {
+                    // 将下载任务推入队列
+                    ++sum
+                    bag.push(download, x, y, all[z].t, mapstyle)
+                }
             }
         }
     }
@@ -119,11 +126,13 @@ function task() {
  * @param {Number} x 
  * @param {Number} y 
  * @param {Number} z 
+ * @param {Number} mapstyle 
  */
-function download(x, y, z) {
+function download(x, y, z, mapstyle) {
     fs.exists(`${zpath}/${mapstyle}/${z}/${x}/${y}.png`, (exists) => {
         if (exists) {
             console.log(`文件已存在:${zpath}/${mapstyle}/${z}/${x}/${y}.png`);
+            console.log(--sum)
         } else {
             var ts = Math.floor(Math.random() * 5) //随机生成0-7台服务器
             let imgurl = `http://t${ts}.tianditu.gov.cn/DataServer?T=${mapstyle}&x=${x}&y=${y}&l=${z}&tk=${token}`;
@@ -152,9 +161,11 @@ function download(x, y, z) {
                     console.log(--sum)
                 }).on('error', (err) => {
                     console.log('写入发生异常:', err);
+                    console.log(--sum)
                 }))
             }).catch(err => {
                 console.log('请求异常：' + err);
+                console.log(--sum)
             });
         }
     });
