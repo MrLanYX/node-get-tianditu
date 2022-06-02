@@ -2,14 +2,7 @@
 var axios = require('axios')
 var Bagpipe = require('bagpipe')
 var fs = require("fs");
-var bou = [113.1436, 24.2914, 118.2858, 29.9727]; //下载范围
-
-var Minlevel = 1; //最小层级
-var Maxlevel = 15; //最大层级
-var token = 'f732c4a58212facb875f52833bb7cc37'; // 一天3000次
-var zpath = './text'; // 瓦片目录
-var speed = 100; //并发数
-var mapstyles = ['vec_w', 'cva_w']; //地图类型(img_w:影像底图 cia_w:影像标注 vec_w:街道底图 cva_w街道标注,备注，自己再api找相对于的)
+var { bou, Minlevel, Maxlevel, token, zpath, speed, mapstyles } = require('./config') // 引入参数
 
 var all = [];
 var user_agent_list_2 = [
@@ -67,7 +60,6 @@ function mainnAllXY(bounding, Minlevel, Maxlevel) {
 
     createDir()
 }
-mainnAllXY(bou, Minlevel, Maxlevel)
 
 function createDir() {
     fs.access(zpath, fs.constants.F_OK, err => {
@@ -129,11 +121,9 @@ function task() {
  * @param {Number} mapstyle 
  */
 function download(x, y, z, mapstyle) {
-    fs.exists(`${zpath}/${mapstyle}/${z}/${x}/${y}.png`, (exists) => {
-        if (exists) {
-            console.log(`文件已存在:${zpath}/${mapstyle}/${z}/${x}/${y}.png`);
-            console.log(--sum)
-        } else {
+    fs.stat(`${zpath}/${mapstyle}/${z}/${x}/${y}.png`, (err, stats) => {
+        if (err || stats.size == 0) {
+            // 文件不存在 或者 文件大小为零
             var ts = Math.floor(Math.random() * 5) //随机生成0-7台服务器
             let imgurl = `http://t${ts}.tianditu.gov.cn/DataServer?T=${mapstyle}&x=${x}&y=${y}&l=${z}&tk=${token}`;
             var ip = Math.floor(Math.random() * 256) //随机生成IP迷惑服务器
@@ -154,19 +144,25 @@ function download(x, y, z, mapstyle) {
                 responseType: 'stream',
                 forever: true
             };
-
             axios(options).then(res => {
                 res.data.pipe(fs.createWriteStream(`${zpath}/${mapstyle}/${z}/${x}/${y}.png`).on('finish', () => {
-                    console.log(`图片下载成功,第${z}层`)
+                    console.log(`图片下载成功：${zpath}/${mapstyle}/${z}/${x}/${y}.png`)
                     console.log(--sum)
                 }).on('error', (err) => {
                     console.log('写入发生异常:', err);
                     console.log(--sum)
+                    process.exit(1)
                 }))
             }).catch(err => {
                 console.log('请求异常：' + err);
                 console.log(--sum)
+                process.exit(1)
             });
+        } else {
+            // 文件存在跳过
+            console.log(--sum)
         }
-    });
+    })
 }
+
+mainnAllXY(bou, Minlevel, Maxlevel)
