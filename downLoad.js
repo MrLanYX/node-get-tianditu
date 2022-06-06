@@ -4,6 +4,8 @@ var Bagpipe = require('bagpipe')
 var fs = require("fs");
 var { bou, Minlevel, Maxlevel, token, zpath, speed, mapstyles } = require('./config') // 引入参数
 
+var sum = 0;
+var requestTotal = 0;
 var all = [];
 var user_agent_list_2 = [
     "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36 OPR/26.0.1656.60",
@@ -94,7 +96,6 @@ function createDir() {
  * 创建下载队列
  */
 
-var sum = 0;
 var bag = new Bagpipe(speed, { timeout: 1000 })
 
 function task() {
@@ -140,27 +141,26 @@ function download(x, y, z, mapstyle) {
                     'X-Forwarded-For': ip,
                     "Connection": 'keep-alive'
                 },
-                timeout: 5000,
+                timeout: 30000,
                 responseType: 'stream',
                 forever: true
             };
             axios(options).then(res => {
                 res.data.pipe(fs.createWriteStream(`${zpath}/${mapstyle}/${z}/${x}/${y}.png`).on('finish', () => {
-                    console.log(`图片下载成功：${zpath}/${mapstyle}/${z}/${x}/${y}.png`)
-                    console.log(--sum)
+                    console.log(`图片下载成功:${zpath}/${mapstyle}/${z}/${x}/${y}.png`);
+                    ++requestTotal;
+                    console.log('下载:' + --sum)
                 }).on('error', (err) => {
-                    console.log('写入发生异常:', err);
-                    console.log(--sum)
+                    console.log('写入发生异常:', err + ',任务停止于:' + --sum, ',本次消耗下载数:' + requestTotal);
                     process.exit(1)
                 }))
             }).catch(err => {
-                console.log('请求异常：' + err);
-                console.log(--sum)
+                console.log('请求异常:' + err + ',任务停止于:' + --sum, ',本次消耗下载数:' + requestTotal);
                 process.exit(1)
             });
         } else {
             // 文件存在跳过
-            console.log(--sum)
+            console.log('跳过:' + --sum)
         }
     })
 }
