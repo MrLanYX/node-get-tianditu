@@ -201,8 +201,9 @@ function appendLog(cusid, body, date) {
         fs.appendFile(logFile, text, (error) => {});
     } else {
         console.log('该路径不存在');
-        fs.mkdir('./log',null,(error)  => { });
         fs.writeFile(logFile, text, (error) => {});
     }
 }
+
+fs.mkdir('./log', null, (error) => {});
 mainnAllXY(bou, Minlevel, Maxlevel)
