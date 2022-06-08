@@ -3,6 +3,8 @@ var axios = require('axios')
 var Bagpipe = require('bagpipe')
 var fs = require("fs");
 var { bou, Minlevel, Maxlevel, token, zpath, speed, mapstyles } = require('./config') // 引入参数
+var currentDate = new Date(); //日期处理
+var date = currentDate.getTime() // 计入启动时时间生成日志
 
 var sum = 0;
 var requestTotal = 0;
@@ -147,16 +149,29 @@ function download(x, y, z, mapstyle) {
             };
             axios(options).then(res => {
                 res.data.pipe(fs.createWriteStream(`${zpath}/${mapstyle}/${z}/${x}/${y}.png`).on('finish', () => {
-                    console.log(`图片下载成功:${zpath}/${mapstyle}/${z}/${x}/${y}.png`);
-                    ++requestTotal;
-                    console.log('下载:' + --sum)
+                    --sum
+                    console.log(`图片下载成功:${zpath}/${mapstyle}/${z}/${x}/${y}.png,目前下载数量` + ++requestTotal);
                 }).on('error', (err) => {
-                    console.log('写入发生异常:', err + ',任务停止于:' + --sum, ',本次消耗下载数:' + requestTotal);
-                    process.exit(1)
+                    --sum
+                    console.log('写入发生异常');
+                    appendLog('writeErr', {
+                        err: err,
+                        num: sum,
+                        downloadNum: requestTotal,
+                        options: options
+                    }, date)
+                    // process.exit(1)
                 }))
             }).catch(err => {
-                console.log('请求异常:' + err + ',任务停止于:' + --sum, ',本次消耗下载数:' + requestTotal);
-                process.exit(1)
+                --sum
+                console.log('请求异常:' + err);
+                appendLog('requestErr', {
+                    err: err,
+                    num: sum,
+                    downloadNum: requestTotal,
+                    options: options
+                }, date)
+                // process.exit(1)
             });
         } else {
             // 文件存在跳过
@@ -164,5 +179,30 @@ function download(x, y, z, mapstyle) {
         }
     })
 }
+/**
+ * 
+ * @param {String} cusid 参数1:表示要向那个文件追加内容,只一个文件的路径
+ * @param {Object} body 参数2:表示要追加的内容
+ * @param {Date} date 参数3:时间戳生成文件名字
+ */
+function appendLog(cusid, body, date) {
 
+    let year = currentDate.getFullYear();
+    let month = currentDate.getMonth() + 1;
+    let day = currentDate.getDate();
+
+    //封装保存内容，'\n'为换行符
+    let text = currentDate.toLocaleString() + '\n' + cusid + '\n' + JSON.stringify(body) + '\n'
+
+    let logFile = "./log/log_" + year + '_' + month + '_' + day + '_' + date + ".txt"
+    //存在则追加，不存在则新建
+    if (fs.existsSync(logFile)) {
+        if (fs.statSync(logFile).size > 102400) process.exit(1);
+        fs.appendFile(logFile, text, (error) => {});
+    } else {
+        console.log('该路径不存在');
+        fs.mkdir('./log',null,(error)  => { });
+        fs.writeFile(logFile, text, (error) => {});
+    }
+}
 mainnAllXY(bou, Minlevel, Maxlevel)
