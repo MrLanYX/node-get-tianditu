@@ -1,11 +1,24 @@
 module.exports = {
+    // 终止程序环境配置
+    EXIT_WRITE_ERR: true, // 写入异常是否终止程序，推荐 true
+    EXIT_REQUEST_ERR: false, // 请求异常是否终止程序，推荐 false 除非控制台发现请求报错过多，可以改成 true 在日志中查看详情
+    EXIT_LOG_LIMIT_SIZE: true, // 是否日志过大停止写入停止程序，推荐 true 
+    LOG_LIMIT_SIZE: 102400, // 限制日志大小 默认 100kb 可修改 因为异步原因有有所偏差
+
     bou: [113.1436, 24.2914, 118.2858, 29.9727], //下载范围
     Minlevel: 14, //最小层级
     Maxlevel: 14, //最大层级
-    token: 'f732c4a58212facb875f52833bb7cc37', // 一天3000次
+    token: 'f732c4a58212facb875f52833bb7cc37', // 一天3000次（大概也许不记得是哪位同事的token了）
+    mapstyles: ['vec_w', 'cva_w'], //地图类型(img_w:影像底图 cia_w:影像标注 vec_w:街道底图 cva_w街道标注)
+    testLogPath: '', // 如果填入 log 地址即使用 log 中错误请求对现有资源进行补充或修复 例：log/log_2022_6_9_1654761977895_supplement_urlLists.txt
+    testType: 'vec_w',
+    testX: 1,
+    testY: 1,
+    testZ: 1,
+
+    // 以下是不建议改动的参数
     zpath: './text', // 瓦片目录
     speed: 100, //并发数
-    mapstyles: ['vec_w', 'cva_w'], //地图类型(img_w:影像底图 cia_w:影像标注 vec_w:街道底图 cva_w街道标注)
     user_agent_list_2: [
         "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36 OPR/26.0.1656.60",
         "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) Gecko/20100101 Firefox/34.0",

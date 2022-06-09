@@ -2,7 +2,7 @@
 var axios = require('axios')
 var Bagpipe = require('bagpipe')
 var fs = require("fs");
-var { user_agent_list_2, bou, Minlevel, Maxlevel, token, zpath, speed, mapstyles } = require('./config') // 引入参数
+var { EXIT_WRITE_ERR, EXIT_REQUEST_ERR, EXIT_LOG_LIMIT_SIZE, LOG_LIMIT_SIZE, user_agent_list_2, bou, Minlevel, Maxlevel, token, zpath, speed, mapstyles } = require('./config') // 引入参数
 var currentDate = new Date(); //日期处理
 var date = currentDate.getTime() // 计入启动时时间生成日志
 
@@ -143,7 +143,7 @@ function download(x, y, z, mapstyle) {
                         x: x,
                         y: y
                     }, date)
-                    // process.exit(1)
+                    if (EXIT_WRITE_ERR) process.exit(1)
                 }))
             }).catch(err => {
                 --sum
@@ -158,7 +158,7 @@ function download(x, y, z, mapstyle) {
                     x: x,
                     y: y
                 }, date)
-                // process.exit(1)
+                if (EXIT_REQUEST_ERR) process.exit(1)
             });
         } else {
             // 文件存在跳过
@@ -166,6 +166,8 @@ function download(x, y, z, mapstyle) {
         }
     })
 }
+
+
 /**
  * 
  * @param {String} cusid 参数1:表示要向那个文件追加内容,只一个文件的路径
@@ -173,7 +175,6 @@ function download(x, y, z, mapstyle) {
  * @param {Date} date 参数3:时间戳生成文件名字
  */
 function appendLog(cusid, body, date) {
-
     let year = currentDate.getFullYear();
     let month = currentDate.getMonth() + 1;
     let day = currentDate.getDate();
@@ -192,7 +193,7 @@ function appendLog(cusid, body, date) {
     //存在则追加，不存在则新建
     if (fs.existsSync(logFile)) {
         // 防止单日志文件大小过大
-        if (fs.statSync(logFile).size > 102400) process.exit(1);
+        if (fs.statSync(logFile).size > LOG_LIMIT_SIZE && EXIT_LOG_LIMIT_SIZE) process.exit(1);
         fs.appendFile(logFile, text, (error) => {});
         fs.appendFile(supplementFile, supplementTest, (error) => {});
     } else {

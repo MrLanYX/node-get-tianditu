@@ -1,15 +1,10 @@
 var axios = require('axios')
 var fs = require("fs");
 var Bagpipe = require('bagpipe')
-var { user_agent_list_2, bou, Minlevel, Maxlevel, token, zpath, speed, mapstyles } = require('./config') // 引入参数
+var { EXIT_WRITE_ERR, EXIT_REQUEST_ERR, EXIT_LOG_LIMIT_SIZE, LOG_LIMIT_SIZE, testLogPath, user_agent_list_2, token, zpath, speed, testType, testX, testY, testZ } = require('./config') // 引入参数
 
 var currentDate = new Date(); //日期处理
 var date = currentDate.getTime() // 计入启动时时间生成日志
-var type = 'vec_w';
-var x = '1';
-var y = '1';
-var z = '1';
-var logPath = ''; // 如果填入 log 地址即使用 log 中错误请求对现有资源进行补充或修复 例：log/log_2022_6_9_1654761977895_supplement_urlLists.txt
 
 
 var bag = new Bagpipe(speed, { timeout: 1000 })
@@ -44,7 +39,7 @@ function download(data) {
                 err: err,
                 options: options
             }, date)
-            // process.exit(1)
+            if (EXIT_WRITE_ERR) process.exit(1)
         }))
     }).catch(err => {
         console.log('请求异常:' + err);
@@ -52,7 +47,7 @@ function download(data) {
             err: err,
             options: options
         }, date)
-        // process.exit(1)
+        if (EXIT_REQUEST_ERR) process.exit(1)
     });
 }
 
@@ -76,7 +71,7 @@ function appendLog(cusid, body, date) {
     //存在则追加，不存在则新建
     if (fs.existsSync(logFile)) {
         // 防止单日志文件大小过大
-        if (fs.statSync(logFile).size > 102400) process.exit(1);
+        if (fs.statSync(logFile).size > LOG_LIMIT_SIZE && EXIT_LOG_LIMIT_SIZE) process.exit(1);
         fs.appendFile(logFile, text, (error) => {});
     } else {
         console.log('该路径不存在');
@@ -89,12 +84,12 @@ function appendLog(cusid, body, date) {
 
 
 fs.mkdir('./log', null, (error) => {});
-fs.readFile(logPath, 'utf-8', (err, stats) => {
+fs.readFile(testLogPath, 'utf-8', (err, stats) => {
     if (err) {
         // 文件不存在 测试某个图片的请求
         axios({
             method: 'GET',
-            url: `http://t0.tianditu.gov.cn/DataServer?T=${type}&x=${x}&y=${y}&l=${z}&tk=${token}`,
+            url: `http://t0.tianditu.gov.cn/DataServer?T=${testType}&x=${testX}&y=${testY}&l=${testZ}&tk=${token}`,
             headers: {
                 'User-Agent': '"Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) Gecko/20100101 Firefox/34.0"',
                 'X-Forwarded-For': '192.168.0.1',
@@ -107,9 +102,11 @@ fs.readFile(logPath, 'utf-8', (err, stats) => {
                 console.log('测试成功');
             }).on('error', (err) => {
                 console.log('测试写入异常', err);
+                if (EXIT_WRITE_ERR) process.exit(1)
             }))
         }).catch(err => {
             console.log('测试接口异常', err);
+            if (EXIT_REQUEST_ERR) process.exit(1)
         });
     } else {
         // 文件存在开始进行修复或补全
