@@ -1,8 +1,9 @@
-// An highlighted block
 var axios = require('axios')
 var Bagpipe = require('bagpipe')
 var fs = require("fs");
-var { EXIT_WRITE_ERR, EXIT_REQUEST_ERR, EXIT_LOG_LIMIT_SIZE, LOG_LIMIT_SIZE, user_agent_list_2, bou, Minlevel, Maxlevel, token, zpath, speed, mapstyles } = require('./config') // 引入参数
+var { LOG_FUNCTION, EXIT_WRITE_ERR, EXIT_REQUEST_ERR, EXIT_LOG_LIMIT_SIZE, LOG_LIMIT_SIZE } = require('./config') // 引入环境变量
+var { user_agent_list_2, bou, Minlevel, Maxlevel, token, zpath, speed, mapstyles } = require('./config') // 引入参数
+
 var currentDate = new Date(); //日期处理
 var date = currentDate.getTime() // 计入启动时时间生成日志
 
@@ -133,7 +134,7 @@ function download(x, y, z, mapstyle) {
                 }).on('error', (err) => {
                     --sum
                     console.log('写入发生异常');
-                    appendLog('writeErr', {
+                    if (LOG_FUNCTION) appendLog('writeErr', {
                         err: err,
                         num: sum,
                         downloadNum: requestTotal,
@@ -148,7 +149,7 @@ function download(x, y, z, mapstyle) {
             }).catch(err => {
                 --sum
                 console.log('请求异常:' + err);
-                appendLog('requestErr', {
+                if (LOG_FUNCTION) appendLog('requestErr', {
                     err: err,
                     num: sum,
                     downloadNum: requestTotal,

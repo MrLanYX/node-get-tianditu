@@ -1,7 +1,8 @@
 var axios = require('axios')
 var fs = require("fs");
 var Bagpipe = require('bagpipe')
-var { EXIT_WRITE_ERR, EXIT_REQUEST_ERR, EXIT_LOG_LIMIT_SIZE, LOG_LIMIT_SIZE, testLogPath, user_agent_list_2, token, zpath, speed, testType, testX, testY, testZ } = require('./config') // 引入参数
+var { LOG_FUNCTION, EXIT_WRITE_ERR, EXIT_REQUEST_ERR, EXIT_LOG_LIMIT_SIZE, LOG_LIMIT_SIZE } = require('./config') // 引入环境变量
+var { testLogPath, user_agent_list_2, token, zpath, speed, testType, testX, testY, testZ } = require('./config') // 引入参数
 
 var currentDate = new Date(); //日期处理
 var date = currentDate.getTime() // 计入启动时时间生成日志
@@ -30,12 +31,12 @@ function download(data) {
     axios(options).then(res => {
         res.data.pipe(fs.createWriteStream(`${zpath}/${params.mapstyle}/${params.z}/${params.x}/${params.y}.png`).on('finish', () => {
             console.log(`图片下载成功:${zpath}/${params.mapstyle}/${params.z}/${params.x}/${params.y}.png`);
-            appendLog('testWriteSuccess', {
+            if (LOG_FUNCTION) appendLog('testWriteSuccess', {
                 options: options
             }, date)
         }).on('error', (err) => {
             console.log('写入发生异常');
-            appendLog('testWriteErr', {
+            if (LOG_FUNCTION) appendLog('testWriteErr', {
                 err: err,
                 options: options
             }, date)
@@ -43,7 +44,7 @@ function download(data) {
         }))
     }).catch(err => {
         console.log('请求异常:' + err);
-        appendLog('testRequestErr', {
+        if (LOG_FUNCTION) appendLog('testRequestErr', {
             err: err,
             options: options
         }, date)

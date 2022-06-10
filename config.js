@@ -1,7 +1,8 @@
 module.exports = {
     // 终止程序环境配置
+    LOG_FUNCTION: true, // 是否开启日志写入功能，推荐 true
     EXIT_WRITE_ERR: true, // 写入异常是否终止程序，推荐 true
-    EXIT_REQUEST_ERR: false, // 请求异常是否终止程序，推荐 false 除非控制台发现请求报错过多，可以改成 true 在日志中查看详情
+    EXIT_REQUEST_ERR: false, // 请求异常是否终止程序，推荐 false 除非控制台发现请求报错过多或日志过大，可以改成 true 在日志中查看详情
     EXIT_LOG_LIMIT_SIZE: true, // 是否日志过大停止写入停止程序，推荐 true 
     LOG_LIMIT_SIZE: 102400, // 限制日志大小 默认 100kb 可修改 因为异步原因有有所偏差
 
